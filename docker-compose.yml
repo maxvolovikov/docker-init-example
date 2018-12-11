@@ -1,0 +1,10 @@
+# docker-compose.yml
+version: '3'
+services:
+    node:
+        build:
+            context: ../
+            dockerfile: ./docker/Dockerfile.node-build
+        image: whatzpoppin-node:latest
+        ports:
+            - '8000:8000'

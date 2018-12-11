@@ -1,0 +1,24 @@
+# docker-compose.yml
+version: '3'
+services:
+    node:
+        depends_on:
+            - postgres
+        environment:
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_USERNAME: postgres
+            POSTGRES_DB: whatzpoppin
+            POSTGRES_HOST: postgres
+            POSTGRES_PORT: 5432
+
+    postgres:
+        build:
+            context: ../
+            dockerfile: ./docker/Dockerfile.postgres-build
+        image: whatzpoppin-postgres:latest
+        environment:
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_USERNAME: postgres
+            POSTGRES_DB: whatzpoppin
+        ports:
+            - '5555:5432'

@@ -1,0 +1,16 @@
+FROM node:10
+
+WORKDIR /usr/src/app
+COPY ./package.json \
+    ./yarn.lock \
+    ./
+
+# If you have native dependencies, you'll need extra tools
+# RUN apk update
+# RUN apk update --no-cache make gcc g++ python postgresql-devel
+# RUN npm install -g nodemon
+
+RUN yarn
+COPY ./ ./
+
+CMD [ "yarn", "run", "docker-start" ]

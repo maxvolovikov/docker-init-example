@@ -1,0 +1,129 @@
+#start docker
+#!/bin/bash
+set -e
+export DOCKER_HOSTNAME=$(hostname)
+
+echo "Building node build base"
+(cd ../../docker && docker build -f Dockerfile.node-build -t whatzpoppin-node ../)
+
+echo "Bringing up Docker"
+(cd ../../docker && docker-compose -f ./docker-compose.yml down && docker-compose -f ./docker-compose.yml up -d --remove-orphans)
+
+echo "Done"
+read -p "press enter to continue"
+
+#start docker with db
+#!/bin/bash
+set -e
+export DOCKER_HOSTNAME=$(hostname)
+
+echo "Building postgres build base"
+(cd ../../docker && docker build -f Dockerfile.postgres-build -t whatzpoppin-postgres ../)
+
+echo "Building node build base"
+(cd ../../docker && docker build -f Dockerfile.node-build -t whatzpoppin-node ../)
+
+echo "Brining up Docker"
+(cd ../../docker && docker-compose -f ./docker-compose.yml -f ./docker-compose.db.yml down && docker-compose -f ./docker-compose.yml -f ./docker-compose.db.yml up -d --remove-orphans)
+
+echo "Done"
+read -p "press enter to continue"
+
+#stop docker with db
+#!/bin/bash
+
+echo "Stoping Docker"
+(cd ../../docker && docker-compose -f ./docker-compose.yml -f ./docker-compose.db.yml down)
+
+echo "Done"
+read -p "press enter to continue"
+
+#stop docker
+#!/bin/bash
+
+echo "Stoping Docker"
+(cd ../../docker && docker-compose -f ./docker-compose.yml down)
+
+echo "Done"
+read -p "press enter to continue"
+
+#docker-compose yml
+# docker-compose.yml
+version: '3'
+services:
+    node:
+        build:
+            context: ../
+            dockerfile: ./docker/Dockerfile.node-build
+        image: whatzpoppin-node:latest
+        ports:
+            - '8000:8000'
+
+#docker file node build
+FROM node:10
+
+WORKDIR /usr/src/app
+COPY ./package.json \
+    ./yarn.lock \
+    ./
+
+# If you have native dependencies, you'll need extra tools
+# RUN apk update
+# RUN apk update --no-cache make gcc g++ python postgresql-devel
+# RUN npm install -g nodemon
+
+RUN yarn
+COPY ./ ./
+
+CMD [ "yarn", "run", "docker-start" ]
+
+#docker file postgres build
+FROM postgres:11-alpine
+
+# Setup wait-for-script
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
+
+#docker compose db
+# docker-compose.yml
+version: '3'
+services:
+    node:
+        depends_on:
+            - postgres
+        environment:
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_USERNAME: postgres
+            POSTGRES_DB: whatzpoppin
+            POSTGRES_HOST: postgres
+            POSTGRES_PORT: 5432
+
+    postgres:
+        build:
+            context: ../
+            dockerfile: ./docker/Dockerfile.postgres-build
+        image: whatzpoppin-postgres:latest
+        environment:
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_USERNAME: postgres
+            POSTGRES_DB: whatzpoppin
+        ports:
+            - '5555:5432'
+
+#docker compose debug
+# docker-compose.yml
+version: '3'
+services:
+    node:
+        environment:
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_USERNAME: postgres
+            POSTGRES_DB: whatzpoppin
+            POSTGRES_HOST: docker.for.mac.localhost
+            POSTGRES_PORT: 5432
+        volumes:
+            - ../:/usr/src/app
+            - /usr/src/app/node_modules
+        ports:
+            - '9229:9229'
+        command: ['yarn', 'run', 'docker-nodemon']

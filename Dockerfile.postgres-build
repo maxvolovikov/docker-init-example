@@ -1,0 +1,5 @@
+FROM postgres:11-alpine
+
+# Setup wait-for-script
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
